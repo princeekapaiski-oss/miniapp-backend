@@ -1,0 +1,31 @@
+name: Deploy to Render and Run Migrations
+
+on:
+  push:
+    branches:
+      - main  # Миграции будут запускаться при деплое в main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install psycopg2-binary  # Устанавливаем библиотеку для работы с PostgreSQL
+
+      - name: Run migrations
+        run: |
+          flask db upgrade  # Это применяет миграции
+          
+      - name: Deploy to Render
+        run: |
+          render deploy  # Убедись, что у тебя есть правильный Render CLI

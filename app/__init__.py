@@ -1,7 +1,10 @@
+import os  # Добавь этот импорт в начало файла
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
+from flask_cors import CORS
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -11,10 +14,14 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object("app.config.Config")
 
+    frontend_url = os.getenv("FRONTEND_URL", "*")
+    CORS(app, resources={r"/*": {"origins": frontend_url}})
+
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
 
+    # Регистрируем Blueprints (маршруты)
     from .routes.auth import auth_bp
     from .routes.me import me_bp
     from .routes.activities import activities_bp
@@ -22,6 +29,7 @@ def create_app():
     from .routes.dev import dev_bp
     from .routes.admin import admin_bp
     from .routes.dev_notifications import dev_notifications_bp
+    from .routes.health import health_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(me_bp, url_prefix="/me")
@@ -30,15 +38,18 @@ def create_app():
     app.register_blueprint(dev_bp, url_prefix="/dev")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(dev_notifications_bp, url_prefix="/dev")
+    app.register_blueprint(health_bp, url_prefix="/health")
 
+    # Модели
     from app.models.user import User
     from app.models.activity import Activity
     from app.models.registration import ActivityRegistration
     from app.models.achievement import Achievement
     from app.models.user_achievement import UserAchievement
 
-    import os
+    # Если включен планировщик задач
     if os.getenv("ENABLE_SCHEDULER", "0") == "1":
         from app.scheduler import start_scheduler
         start_scheduler(app)
+
     return app

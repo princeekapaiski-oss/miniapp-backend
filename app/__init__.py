@@ -14,14 +14,16 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object("app.config.Config")
 
+    # Настроим CORS
     frontend_url = os.getenv("FRONTEND_URL", "*")
     CORS(app, resources={r"/*": {"origins": frontend_url}})
 
+    # Инициализация базы данных, JWT и миграций
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
 
-    # Регистрируем Blueprints (маршруты)
+    # Регистрируем маршруты
     from .routes.auth import auth_bp
     from .routes.me import me_bp
     from .routes.activities import activities_bp
